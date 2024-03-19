@@ -3,7 +3,7 @@ from flask_sqlalchemy import SQLAlchemy
 from os import getenv
 
 app = Flask(__name__)
-app.config['SQLALCHEMY_DATABASE_URI'] = 'postgres://fallsensor_db_user:h3HKNB4YH19QpxuYRWPJxZF9oQHboILw@dpg-cnssqqla73kc73b6qefg-a.frankfurt-postgres.render.com/fallsensor_db'
+app.config['SQLALCHEMY_DATABASE_URI'] = getenv('DATABASE_URL')
 db = SQLAlchemy(app)
 
 class Event(db.Model):
