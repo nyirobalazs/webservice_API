@@ -1,20 +1,26 @@
-from flask import Flask, request
+from flask import Flask, request, jsonify
 from flask_sqlalchemy import SQLAlchemy
-import os
+from os import getenv
 
 app = Flask(__name__)
-load_dotenv()
-app.config["API_TITLE"] = "Stores REST API"
-app.config["API_VERSION"] = "v1"
-app.config["OPENAPI_VERSION"] = "3.0.3"
-app.config["OPENAPI_URL_PREFIX"] = "/"
-app.config["OPENAPI_SWAGGER_UI_PATH"] = "/swagger-ui"
-app.config[
-    "OPENAPI_SWAGGER_UI_URL"
-] = "https://cdn.jsdelivr.net/npm/swagger-ui-dist/"
-app.config["SQLALCHEMY_DATABASE_URI"] = db_url or os.getenv("DATABASE_URL", "sqlite:///data.db")
-app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
-app.config["PROPAGATE_EXCEPTIONS"] = True
-db.init_app(app)
-api = Api(app)
+app.config['SQLALCHEMY_DATABASE_URI'] = getenv('postgres://fallsensor_db_user:h3HKNB4YH19QpxuYRWPJxZF9oQHboILw@dpg-cnssqqla73kc73b6qefg-a.frankfurt-postgres.render.com/fallsensor_db')
+db = SQLAlchemy(app)
 
+class Event(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    type = db.Column(db.String(50), nullable=False)
+    date = db.Column(db.String(50), nullable=False)
+
+@app.route('/events', methods=['POST'])
+def insert_event():
+    data = request.get_json()
+    for event_data in data:
+        event = Event(type=event_data['type'], date=event_data['date'])
+        db.session.add(event)
+    db.session.commit()
+    return '', 200
+
+@app.route('/control_message', methods=['GET'])
+def get_control_message():
+    # This is a placeholder. Replace this with the actual logic for retrieving the control message.
+    return jsonify({'control_message': 'sync'})
