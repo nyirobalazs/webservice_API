@@ -1,63 +1,42 @@
 from flask import Flask, request, jsonify
+from API import DatabaseSynchronizer, DeviceController
 from flask_sqlalchemy import SQLAlchemy
-from sqlalchemy.exc import IntegrityError, NoResultFound
-from os import getenv
+import os
 
-db = SQLAlchemy()
+app = Flask(__name__)
+app.config['SQLALCHEMY_DATABASE_URI'] = os.getenv('DATABASE_URL')  # PostgreSQL database URL
+db = SQLAlchemy(app)
 
-class Event(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
-    type = db.Column(db.String(50), nullable=False)
-    date = db.Column(db.String(50), nullable=False)
+# Initialize DatabaseSynchronizer and DeviceController
+local_db = None  # Replace with your local database
+api_url = None  # Replace with your API URL
+db_sync = DatabaseSynchronizer(local_db, api_url)
+device_controller = DeviceController(None, api_url)  # Replace None with your MainController instance
 
-    def serialize(self):
-        return {
-            'id': self.id,
-            'type': self.type,
-            'date': self.date
-        }
+@app.route('/insert', methods=['POST'])
+def insert_record():
+    record = request.json
+    # Insert the record into the PostgreSQL database
+    # You need to define your own model for the record
+    return jsonify({'message': 'Record inserted'}), 200
 
-class FallAPI:
-    def __init__(self):
-        self.app = Flask(__name__)
-        # API_ADDRESS = 'postgresql://fallsensor_db_user:h3HKNB4YH19QpxuYRWPJxZF9oQHboILw@dpg-cnssqqla73kc73b6qefg-a.frankfurt-postgres.render.com/fallsensor_db'
-        API_ADDRESS = getenv('DATABASE_URL')
-        self.app.config['SQLALCHEMY_DATABASE_URI'] = API_ADDRESS
-        db.init_app(self.app)
-        with self.app.app_context():
-            db.create_all()  # Create all tables
+@app.route('/records', methods=['GET'])
+def get_records():
+    # Get all records from the PostgreSQL database
+    # You need to define your own model for the record
+    return jsonify(records), 200
 
-        self.app.route('/events', methods=['POST'])(self.insert_event)
-        self.app.route('/events', methods=['GET'])(self.get_events)
-        self.app.route('/clear', methods=['DELETE'])(self.clear_events)
+@app.route('/clear', methods=['DELETE'])
+def clear_records():
+    # Clear all records from the PostgreSQL database
+    # You need to define your own model for the record
+    return jsonify({'message': 'Records cleared'}), 200
 
-    def insert_event(self):
-        try:
-            data = request.get_json()
-            for event_data in data:
-                event = Event(type=event_data['type'], date=event_data['date'])
-                db.session.add(event)
-            db.session.commit()
-            return '', 200
-        except KeyError:
-            return jsonify({'error': 'Invalid event data'}), 400
-        except IntegrityError:
-            db.session.rollback()
-            return jsonify({'error': 'Database error'}), 500
+@app.route('/control', methods=['POST'])
+def control():
+    message = request.json['message']
+    device_controller.process_control_message(message)
+    return jsonify({'message': 'Control message processed'}), 200
 
-    def get_events(self):
-        try:
-            events = Event.query.all()
-            return jsonify([event.serialize() for event in events]), 200
-        except NoResultFound:
-            return jsonify({'error': 'No events found'}), 404
-        except Exception as e:
-            return jsonify({'error': str(e)}), 500
-
-    def clear_events(self):
-        try:
-            num_rows_deleted = db.session.query(Event).delete()
-            db.session.commit()
-            return jsonify({'message': f'{num_rows_deleted} rows deleted'}), 200
-        except Exception as e:
-            return jsonify({'error': str(e)}), 500
+if __name__ == '__main__':
+    app.run(debug=True)
