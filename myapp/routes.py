@@ -14,17 +14,20 @@ def insert_event():
         event = Event(type=event_data['type'], date=event_data['date'])
         db.session.add(event)
     db.session.commit()
+    print('Events added:', data)
     return '', 200
 
 @main.route('/events', methods=['GET'])
 def get_all_events():
     events = Event.query.all()
+    print('Events retrieved:', events)
     return jsonify([{'type': event.type, 'date': event.date} for event in events])
 
 @main.route('/events', methods=['DELETE'])
 def clear_all_events():
     Event.query.delete()
     db.session.commit()
+    print('Events deleted')
     return '', 200
 
 @main.route('/control_message', methods=['GET'])
@@ -42,5 +45,6 @@ def get_control_message(self):
 
         # Post the control message to the device
         self.post_control_message(control_message)
+        print('Control message:', control_message)
     else:
         print('Failed to get control message:', response.text)
