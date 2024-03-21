@@ -1,5 +1,6 @@
 from .extensions import db
 
-class User(db.Model):
+class Event(db.Model):
     id = db.Column(db.Integer, primary_key=True)
-    username = db.Column(db.String(50))
+    type = db.Column(db.String(50), nullable=False)
+    date = db.Column(db.String(50), nullable=False)
