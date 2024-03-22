@@ -14,16 +14,14 @@ def insert_event():
         event = Event(type=event_data['type'], date=event_data['date'])
         db.session.add(event)
     db.session.commit()
-    print('Events added:', data)
     return '', 200
 
-@main.route('/events', methods=['GET'])
+@main.route('/get_events', methods=['GET'])
 def get_all_events():
     events = Event.query.all()
-    print('Events retrieved:', events)
     return jsonify([{'type': event.type, 'date': event.date} for event in events])
 
-@main.route('/events', methods=['DELETE'])
+@main.route('/clear_all_events', methods=['DELETE'])
 def clear_all_events():
     Event.query.delete()
     db.session.commit()
