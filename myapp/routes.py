@@ -3,11 +3,11 @@ import requests
 import json
 
 from .extensions import db
-from .models import Event
+from .models import Event, Control
 
 main = Blueprint('main', __name__)
 
-@main.route('/events', methods=['POST'])
+@main.route('/add_events', methods=['POST'])
 def insert_event():
     data = request.get_json()
     for event_data in data:
@@ -30,21 +30,39 @@ def clear_all_events():
     print('Events deleted')
     return '', 200
 
-@main.route('/control_message', methods=['GET'])
-def get_control_message(self):
-    # Send a GET request to the API
-    response = requests.get(self.api_url + '/control_message', headers=self.headers, verify=True)
+@main.route('/update_control', methods=['POST'])
+def update_control():
+    # Extract the control message from the request data
+    control_message = request.get_json()
 
-    # Check the response
-    if response.status_code == 200:
-        # Parse the control message from the response
-        control_message = json.loads(response.text)['control_message']
+    # Update the database with the control message
+    control = Control(camera_status=control_message['camera_status'],
+                  radar_status=control_message['radar_status'],
+                  mute_status=control_message['mute_status'],
+                  arm_status=control_message['arm_status'],
+                  date=control_message['date'])
+    db.session.add(control)
+    db.session.commit()
 
-        # Process the control message
-        self.process_control_message(control_message)
+    print('Control message updated:', control_message)
+    return '', 200
 
-        # Post the control message to the device
-        self.post_control_message(control_message)
+@main.route('/get_control', methods=['GET'])
+def get_control():
+    # Fetch the most recent control message from the database
+    event = Event.query.order_by(Event.date.desc()).first()
+
+    if event is not None:
+        control_message = {
+            'camera_status': event.camera_status,
+            'radar_status': event.radar_status,
+            'mute_status': event.mute_status,
+            'arm_status': event.arm_status,
+            'date': event.date
+        }
         print('Control message:', control_message)
+        return jsonify(control_message), 200
     else:
-        print('Failed to get control message:', response.text)
+        print('No control message found')
+        return '', 404
+
