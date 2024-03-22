@@ -7,7 +7,7 @@ from .models import Event
 
 main = Blueprint('main', __name__)
 
-@main.route('/add_events', methods=['GET'])
+@main.route('/add_events', methods=['POST'])
 def insert_event():
     data = request.get_json()
     print(data)
