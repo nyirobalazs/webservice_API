@@ -9,7 +9,9 @@ main = Blueprint('main', __name__)
 
 @main.route('/add_events', methods=['POST'])
 def insert_event():
+    print('here')
     data = request.get_json()
+    print(data)
     for event_data in data:
         event = Event(type=event_data['type'], date=event_data['date'])
         db.session.add(event)
